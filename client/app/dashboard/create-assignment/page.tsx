@@ -354,7 +354,7 @@ Learning Objectives: ${learningObjectives}
       description: "Content has been generated using AI backend.",
     });
 
-    await fetch("/api/assignments/save-assignment", {
+    await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/assignments/save-assignment`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
