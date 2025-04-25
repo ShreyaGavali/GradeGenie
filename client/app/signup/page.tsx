@@ -151,7 +151,12 @@ export default function SignupPage() {
                     <p className="text-xs text-muted-foreground">Password must be at least 8 characters</p>
                   </div>
                 </div>
-                <Button className="w-full py-6 text-base" type="submit">Continue</Button>
+                <Button className="w-full py-6 text-base" type="submit">{loading ? "Signing Up" : "Signup"}</Button>
+                {loading && (
+              <div className="flex justify-center mt-4">
+                <div className="border-t-4 border-primary rounded-full animate-spin h-8 w-8"></div>
+              </div>
+            )}
                 {error && <p className="text-red-500 text-sm text-center">{error}</p>}
               </form>
             ) : (

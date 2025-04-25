@@ -56,12 +56,13 @@ export default function LoginPage() {
   const [email, setEmail] = useState("")
 const [password, setPassword] = useState("")
 const [error, setError] = useState("")
+const [isLoading, setIsLoading] = useState(false) 
 const router = useRouter()
 
 const handleLogin = async (e: React.FormEvent) => {
   e.preventDefault()
   setError("")
-
+  setIsLoading(true)
   try {
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/login`, {
       method: "POST",
@@ -84,6 +85,8 @@ const handleLogin = async (e: React.FormEvent) => {
     router.push("/dashboard/assignments")
   } catch (err: any) {
     setError(err.message)
+  }finally {
+    setIsLoading(false) // Stop loading after the request completes
   }
 }
 
@@ -204,8 +207,13 @@ const handleLogin = async (e: React.FormEvent) => {
               />
             </div>
             <Button className="w-full" size="lg" asChild onClick={handleLogin}>
-              <Link href="/dashboard/assignments">Log in</Link>
+              <Link href="/dashboard/assignments">{isLoading ? "Logging in..." : "Log in"}</Link>
             </Button>
+            {isLoading && (
+              <div className="flex justify-center mt-4">
+                <div className="border-t-4 border-primary rounded-full animate-spin h-8 w-8"></div> {/* You can replace with your own spinner */}
+              </div>
+            )}
             {error && <p className="text-red-500 text-center text-sm">{error}</p>}
           </CardContent>
           <CardFooter className="flex flex-col space-y-4 border-t pt-4">
