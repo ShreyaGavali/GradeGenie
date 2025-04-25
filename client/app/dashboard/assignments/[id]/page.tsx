@@ -109,7 +109,7 @@ export default function AssignmentDetailPage({ params }: { params: Promise<{ id:
   // }
 
   if (loading) return <p>Loading...</p>
-if (error || !assignment) return <p>Error loading assignment.</p>
+  if (error || !assignment) return <p>Error loading assignment.</p>
 
   const handleUploadComplete = (files: File[], images: string[]) => {
     console.log("Files uploaded:", files)
@@ -183,9 +183,9 @@ if (error || !assignment) return <p>Error loading assignment.</p>
             <strong>Total Points:</strong> {assignment.totalPoints}
           </p>
         </CardContent>
-      </Card> */}
+       </Card>  */ }
 
-{assignment.generatedContent && (
+      {/* {assignment.generatedContent && (
   <Card>
     <CardHeader>
       <CardTitle>Generated Assignment Details</CardTitle>
@@ -235,7 +235,102 @@ if (error || !assignment) return <p>Error loading assignment.</p>
       )}
     </CardContent>
   </Card>
-)}
+)}  */}
+      {assignment.generatedContent && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Generated Assignment Details</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {assignment.generatedContent.title && (
+              <div>
+                <h2 className="font-semibold text-lg">Title:</h2>
+                <p>{assignment.generatedContent.title}</p>
+              </div>
+            )}
+            {assignment.generatedContent.course && (
+              <div>
+                <h2 className="font-semibold text-lg">Course:</h2>
+                <p>{assignment.generatedContent.course}</p>
+              </div>
+            )}
+            {assignment.generatedContent.dueDate && (
+              <div>
+                <h2 className="font-semibold text-lg">Due Date:</h2>
+                <p>{assignment.generatedContent.dueDate}</p>
+              </div>
+            )}
+            {assignment.generatedContent.description && (
+              <div>
+                <h2 className="font-semibold text-lg">Description:</h2>
+                <p>{assignment.generatedContent.description}</p>
+              </div>
+            )}
+            {assignment.generatedContent.learningObjectives && (
+              <div>
+                <h2 className="font-semibold text-lg">Learning Objectives:</h2>
+                <p>{assignment.generatedContent.learningObjectives}</p>
+              </div>
+            )}
+            {assignment.generatedContent.instructions && (
+              <div>
+                <h2 className="font-semibold text-lg">Instructions:</h2>
+                <p>{assignment.generatedContent.instructions}</p>
+              </div>
+            )}
+
+            {/* Check and render different content types */}
+            {assignment.generatedContent.questions && (
+              <div>
+                <h2 className="font-semibold text-lg">Questions:</h2>
+                <p className="whitespace-pre-line">{assignment.generatedContent.questions}</p>
+              </div>
+            )}
+
+            {/* Render for essay, research papers, short answers, lab reports, etc. */}
+            {assignment.generatedContent.contentType && assignment.generatedContent.content && (
+              <div>
+                <h2 className="font-semibold text-lg">
+                  {assignment.generatedContent.contentType.charAt(0).toUpperCase() + assignment.generatedContent.contentType.slice(1)}:
+                </h2>
+                <p className="whitespace-pre-line">{assignment.generatedContent.content}</p>
+              </div>
+            )}
+
+            {/* Additional content types handling */}
+            {assignment.generatedContent.shortAnswer && (
+              <div>
+                <h2 className="font-semibold text-lg">Short Answer:</h2>
+                <p>{assignment.generatedContent.shortAnswer}</p>
+              </div>
+            )}
+            {assignment.generatedContent.essay && (
+              <div>
+                <h2 className="font-semibold text-lg">Essay:</h2>
+                <p>{assignment.generatedContent.essay}</p>
+              </div>
+            )}
+            {assignment.generatedContent.researchPaper && (
+              <div>
+                <h2 className="font-semibold text-lg">Research Paper:</h2>
+                <p>{assignment.generatedContent.researchPaper}</p>
+              </div>
+            )}
+            {assignment.generatedContent.labReport && (
+              <div>
+                <h2 className="font-semibold text-lg">Lab Report:</h2>
+                <p>{assignment.generatedContent.labReport}</p>
+              </div>
+            )}
+            {assignment.generatedContent.caseStudy && (
+              <div>
+                <h2 className="font-semibold text-lg">Case Study:</h2>
+                <p>{assignment.generatedContent.caseStudy}</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
 
       <Card>
