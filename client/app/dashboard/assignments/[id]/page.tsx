@@ -40,7 +40,7 @@ export default function AssignmentDetailPage({ params }: { params: Promise<{ id:
   useEffect(() => {
     const fetchAssignment = async () => {
       try {
-        const res = await fetch(`/api/assignments/${id}`)  // Use relative URL for local API calls
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/assignments/${id}`)  // Use relative URL for local API calls
         if (!res.ok) throw new Error("Failed to fetch")
         const data = await res.json()
         setAssignment(data)

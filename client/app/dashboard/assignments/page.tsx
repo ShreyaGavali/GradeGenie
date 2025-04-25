@@ -27,7 +27,7 @@ export default function AssignmentsPage() {
   useEffect(() => {
     const fetchAssignments = async () => {
       try {
-        const res = await fetch("/api/assignments/") // Update with your backend URL
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/assignments/`) // Update with your backend URL
         const data = await res.json()
         setAssignments(data)
       } catch (err) {
