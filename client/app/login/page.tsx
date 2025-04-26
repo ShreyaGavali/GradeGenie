@@ -80,6 +80,7 @@ const handleLogin = async (e: React.FormEvent) => {
 
     // Optionally store token or user info
     localStorage.setItem("token", data.token)
+    localStorage.setItem("studentID", data.user.id);
 
     // Redirect to dashboard
     router.push("/dashboard/assignments")

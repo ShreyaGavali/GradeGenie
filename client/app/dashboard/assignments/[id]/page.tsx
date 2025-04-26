@@ -22,6 +22,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from "@/components/ui/use-toast"
+import { uploadToCloudinary } from "@/app/utils/uploadToCloudinary"
 
 
 export default function AssignmentDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -36,6 +37,10 @@ export default function AssignmentDetailPage({ params }: { params: Promise<{ id:
   const [assignment, setAssignment] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
+  const [submissions, setSubmissions] = useState<any[]>([]);
+  const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+
 
   useEffect(() => {
     const fetchAssignment = async () => {
@@ -56,6 +61,26 @@ export default function AssignmentDetailPage({ params }: { params: Promise<{ id:
       fetchAssignment()
     }
   }, [id])
+
+  useEffect(() => {
+    const fetchSubmissions = async () => {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/upload/submissions/${id}`);
+        if (!res.ok) throw new Error("Failed to fetch submissions");
+        const data = await res.json();
+        setSubmissions(data);
+      } catch (err) {
+        console.error("Failed to fetch submissions", err);
+      }
+    };
+
+    if (id) {
+      fetchSubmissions();
+    }
+  }, [id]);
+
+  console.log(submissions);
+
 
   // Mock data for the assignment
   // const assignment = {
@@ -111,11 +136,74 @@ export default function AssignmentDetailPage({ params }: { params: Promise<{ id:
   if (loading) return <p>Loading...</p>
   if (error || !assignment) return <p>Error loading assignment.</p>
 
-  const handleUploadComplete = (files: File[], images: string[]) => {
-    console.log("Files uploaded:", files)
-    console.log("Images captured:", images)
-    // Here you would typically process the files/images and send them to your backend
-  }
+  // const handleUploadComplete = (files: File[], images: string[]) => {
+  //   console.log("Files uploaded:", files)
+  //   console.log("Images captured:", images)
+  //   // Here you would typically process the files/images and send them to your backend
+  // }
+
+  const handleUploadComplete = async (files: File[], images: string[]) => {
+    if (isUploading) return;
+    setIsUploading(true);
+    try {
+      let uploadedUrls: string[] = [];
+
+      const userId = localStorage.getItem('studentID');
+      const assignmentId = id;
+
+      if (!userId) {
+        throw new Error("Student ID not found. Please login again.");
+      }
+
+      // Upload each file to Cloudinary
+      for (let file of files) {
+        const url = await uploadToCloudinary(file);
+        uploadedUrls.push(url);
+      }
+
+      console.log("Uploaded URLs:", uploadedUrls);
+
+      // Pick the first uploaded URL (or all if you want multiple)
+      const cloudinaryUrl = uploadedUrls[0];
+
+      setUploadedUrl(cloudinaryUrl); // new state
+
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/upload/upload-assignment`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          cloudinaryUrl,
+          userId,
+          assignmentId,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        toast({
+          title: "Success",
+          description: "Assignment uploaded successfully!",
+        });
+      } else {
+        throw new Error(result.message || "Upload failed");
+      }
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to upload assignment.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+
 
   const handleEditAssignment = () => {
     // Navigate to the edit assignment page with the current assignment data
@@ -336,11 +424,11 @@ export default function AssignmentDetailPage({ params }: { params: Promise<{ id:
       <Card>
         <CardHeader>
           <CardTitle>Submissions</CardTitle>
-          <CardDescription>{assignment.submissions?.length ?? 0} submissions received</CardDescription>
+          {/* <CardDescription>{assignment.submissions?.length ?? 0} submissions received</CardDescription> */}
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {Array.isArray(assignment.submissions) && assignment.submissions.map((submission) => (
+            {/* {Array.isArray(assignment.submissions) && assignment.submissions.map((submission) => (
               <div key={submission.id} className="flex items-center justify-between p-4 border rounded-lg">
                 <div className="flex items-center gap-4">
                   <Avatar>
@@ -394,7 +482,59 @@ export default function AssignmentDetailPage({ params }: { params: Promise<{ id:
                   </div>
                 </div>
               </div>
+            ))} */}
+            {Array.isArray(submissions) && submissions.map((submission) => (
+              <div key={submission._id} className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="flex items-center gap-4">
+                  <Avatar>
+                    <AvatarImage src={`/placeholder.svg?height=40&width=40`} />
+                    <AvatarFallback>
+                      {submission.userId?.name
+                        ?.split(" ")
+                        .map((n: string) => n[0])
+                        .join("") || "?"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    {submission.userId?.name ? (
+                      <p className="font-medium">{submission.userId.name}</p>
+                    ) : (
+                      <Button
+                        variant="link"
+                        className="p-0 h-auto font-medium text-blue-500"
+                        onClick={() => openAssignNameDialog(submission)}
+                      >
+                        Assign Student Name
+                      </Button>
+                    )}
+                    <p className="text-sm text-muted-foreground">
+                      Submitted: {new Date(submission.uploadedAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline">Pending</Badge> {/* If you don't have grading data yet */}
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="icon" asChild title="Share">
+                      <Link href={`/dashboard/assignments/${id}/submissions/${submission._id}/share`}>
+                        <Share2 className="h-4 w-4" />
+                      </Link>
+                    </Button>
+                    <Button variant="outline" size="icon" asChild title="Download">
+                      <Link href={`/dashboard/assignments/${id}/submissions/${submission._id}/download`}>
+                        <Download className="h-4 w-4" />
+                      </Link>
+                    </Button>
+                    <Button variant="outline" size="icon" asChild title="Review">
+                      <Link href={`/dashboard/assignments/${id}/submissions/${submission._id}`}>
+                        <Eye className="h-4 w-4" />
+                      </Link>
+                    </Button>
+                  </div>
+                </div>
+              </div>
             ))}
+
           </div>
         </CardContent>
       </Card>

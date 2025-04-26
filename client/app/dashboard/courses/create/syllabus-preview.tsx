@@ -5,6 +5,15 @@ interface SyllabusPreviewProps {
 }
 
 export function SyllabusPreview({ syllabusData }: SyllabusPreviewProps) {
+  if (!syllabusData.learningObjectives || syllabusData.learningObjectives.length === 0) {
+    // ❌ No structured data — show raw Gemini text nicely
+    return (
+      <div className="space-y-6 p-4 border rounded-md">
+        <h1 className="text-2xl font-bold">Generated Syllabus</h1>
+        <pre className="whitespace-pre-wrap text-muted-foreground">{syllabusData.rawText}</pre>
+      </div>
+    );
+  }
   // Calculate total percentage for grading policy
   const totalPercentage = Object.values(syllabusData.gradingPolicy).reduce(
     (sum: number, item: any) => sum + item.percentage,

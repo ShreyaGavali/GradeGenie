@@ -4,6 +4,8 @@ const dotenv = require("dotenv");
 const mongoose = require("mongoose");
 const generatedAssignment = require("./routes/assignmentRoute.js");
 const authRoutes = require('./routes/authRoute.js');
+const courseRoutes = require('./routes/courseRoute.js');
+const uploadRoutes = require('./routes/uploadRoute.js');
 
 dotenv.config();
 
@@ -29,6 +31,8 @@ connectDB();
 // API Routes
 app.use("/api/assignments", generatedAssignment);
 app.use("/api/auth", authRoutes);
+app.use("/api/course", courseRoutes);
+app.use("/api/upload", uploadRoutes);
 
 // Start server
 const PORT = process.env.PORT || 5000;

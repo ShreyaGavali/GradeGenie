@@ -1,38 +1,59 @@
+"use client"
 import Link from "next/link"
 import { Plus } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { PageHeader } from "@/components/page-header"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { useEffect, useState } from "react"
+import axios from "axios"
 
 export default function CoursesPage() {
+  const [courses, setCourses] = useState<any[]>([]);  // type any[] for now
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/course/all`);
+        setCourses(response.data);
+      } catch (error) {
+        console.error("Error fetching courses:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCourses();
+  }, []);
+
   // Mock courses data
-  const courses = [
-    {
-      id: "1",
-      name: "Introduction to Literature",
-      description: "A survey of major literary works from various periods and cultures.",
-      subject: "English",
-      students: 28,
-      assignments: 12,
-    },
-    {
-      id: "2",
-      name: "Algebra II",
-      description: "Advanced algebraic concepts including functions, equations, and graphs.",
-      subject: "Mathematics",
-      students: 32,
-      assignments: 15,
-    },
-    {
-      id: "3",
-      name: "World History",
-      description: "Exploration of major historical events and their impact on modern society.",
-      subject: "History",
-      students: 25,
-      assignments: 8,
-    },
-  ]
+  // const courses = [
+  //   {
+  //     id: "1",
+  //     name: "Introduction to Literature",
+  //     description: "A survey of major literary works from various periods and cultures.",
+  //     subject: "English",
+  //     students: 28,
+  //     assignments: 12,
+  //   },
+  //   {
+  //     id: "2",
+  //     name: "Algebra II",
+  //     description: "Advanced algebraic concepts including functions, equations, and graphs.",
+  //     subject: "Mathematics",
+  //     students: 32,
+  //     assignments: 15,
+  //   },
+  //   {
+  //     id: "3",
+  //     name: "World History",
+  //     description: "Exploration of major historical events and their impact on modern society.",
+  //     subject: "History",
+  //     students: 25,
+  //     assignments: 8,
+  //   },
+  // ]
 
   return (
     <div className="container mx-auto py-6">
@@ -66,7 +87,7 @@ export default function CoursesPage() {
             </CardContent>
             <CardFooter className="flex justify-between">
               <Button variant="outline" asChild className="w-full">
-                <Link href={`/dashboard/courses/${course.id}`}>View Details</Link>
+                <Link href={`/dashboard/courses/${course._id}`}>View Details</Link>
               </Button>
             </CardFooter>
           </Card>

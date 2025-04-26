@@ -13,6 +13,9 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { SyllabusPreview } from "./syllabus-preview"
+import { GoogleGenAI } from "@google/genai"
+import { toast } from "@/components/ui/use-toast"
+import axios from 'axios'
 
 interface SyllabusCreatorProps {
   courseDetails: {
@@ -31,6 +34,15 @@ export function SyllabusCreator({ courseDetails, onComplete, isCreating }: Sylla
   const [syllabusData, setSyllabusData] = useState<any>(null)
   const [prompt, setPrompt] = useState("")
   const [additionalInfo, setAdditionalInfo] = useState("")
+  const [generatedContent, setGeneratedContent] = useState<{
+    courseSyllabus?: String
+    courseDescription?: String
+    learningObjective?: String
+    requiredMaterials?: String
+    gradingPolicy?: String
+    gradingScale?: String
+    courseSchedule?: String
+  }>({})
 
   // Generate default prompt based on course details
   useEffect(() => {
@@ -39,86 +51,228 @@ export function SyllabusCreator({ courseDetails, onComplete, isCreating }: Sylla
   }, [courseDetails])
 
   // Mock function to simulate AI generation
-  const generateSyllabus = () => {
-    setIsGenerating(true)
+  // const generateSyllabus = () => {
+  //   setIsGenerating(true)
 
-    // Simulate API call delay
-    setTimeout(() => {
-      // Mock syllabus data
-      const mockSyllabus = {
-        courseTitle: courseDetails.name,
-        instructor: "Professor Name",
-        term: "Fall 2023",
-        courseDescription: courseDetails.description,
-        learningObjectives: [
-          "Understand key concepts and theories in " + courseDetails.subject,
-          "Develop critical thinking and analytical skills",
-          "Apply theoretical knowledge to practical situations",
-          "Communicate ideas effectively through writing and discussion",
-        ],
-        requiredMaterials: [
-          { title: "Main Textbook", author: "Author Name", publisher: "Publisher", year: "2022", required: true },
-          {
-            title: "Supplementary Reading",
-            author: "Author Name",
-            publisher: "Publisher",
-            year: "2020",
-            required: false,
-          },
-        ],
-        gradingPolicy: {
-          assignments: { percentage: 30, description: "Weekly assignments" },
-          participation: { percentage: 10, description: "Class participation and discussion" },
-          midterm: { percentage: 25, description: "Mid-term examination" },
-          finalExam: { percentage: 35, description: "Final examination" },
-        },
-        weeklySchedule: [
-          {
-            week: 1,
-            topic: "Introduction to the Course",
-            readings: "Chapters 1-2",
-            assignments: "Introductory Assignment",
-          },
-          { week: 2, topic: "Foundational Concepts", readings: "Chapters 3-4", assignments: "Reading Response" },
-          { week: 3, topic: "Theoretical Frameworks", readings: "Chapters 5-6", assignments: "Case Study Analysis" },
-          { week: 4, topic: "Applied Methods", readings: "Chapters 7-8", assignments: "Group Project Proposal" },
-          { week: 5, topic: "Current Developments", readings: "Chapters 9-10", assignments: "Research Paper Outline" },
-          { week: 6, topic: "Advanced Topics I", readings: "Chapters 11-12", assignments: "Problem Set" },
-          { week: 7, topic: "Advanced Topics II", readings: "Chapters 13-14", assignments: "Midterm Preparation" },
-          {
-            week: 8,
-            topic: "Midterm Examination",
-            readings: "Review All Previous Chapters",
-            assignments: "Midterm Exam",
-          },
-          { week: 9, topic: "Practical Applications I", readings: "Chapters 15-16", assignments: "Case Analysis" },
-          {
-            week: 10,
-            topic: "Practical Applications II",
-            readings: "Chapters 17-18",
-            assignments: "Group Presentation",
-          },
-          { week: 11, topic: "Integration of Concepts", readings: "Chapters 19-20", assignments: "Synthesis Paper" },
-          { week: 12, topic: "Future Directions", readings: "Chapters 21-22", assignments: "Final Project Work" },
-          { week: 13, topic: "Student Presentations", readings: "None", assignments: "Final Presentations" },
-          { week: 14, topic: "Course Review", readings: "Review All Materials", assignments: "Final Exam Preparation" },
-          { week: 15, topic: "Final Examination", readings: "None", assignments: "Final Exam" },
-        ],
-        policies: {
-          attendance:
-            "Regular attendance is required. More than three unexcused absences will result in grade reduction.",
-          lateWork: "Late assignments will be accepted with a 10% penalty per day, up to three days.",
-          academicIntegrity:
-            "Academic dishonesty, including plagiarism and cheating, will result in course failure and possible disciplinary action.",
-          accommodations: "Reasonable accommodations will be made for students with documented disabilities.",
-        },
-      }
+  //   // Simulate API call delay
+  //   setTimeout(() => {
+  //     // Mock syllabus data
+  //     const mockSyllabus = {
+  //       courseTitle: courseDetails.name,
+  //       instructor: "Professor Name",
+  //       term: "Fall 2023",
+  //       courseDescription: courseDetails.description,
+  //       learningObjectives: [
+  //         "Understand key concepts and theories in " + courseDetails.subject,
+  //         "Develop critical thinking and analytical skills",
+  //         "Apply theoretical knowledge to practical situations",
+  //         "Communicate ideas effectively through writing and discussion",
+  //       ],
+  //       requiredMaterials: [
+  //         { title: "Main Textbook", author: "Author Name", publisher: "Publisher", year: "2022", required: true },
+  //         {
+  //           title: "Supplementary Reading",
+  //           author: "Author Name",
+  //           publisher: "Publisher",
+  //           year: "2020",
+  //           required: false,
+  //         },
+  //       ],
+  //       gradingPolicy: {
+  //         assignments: { percentage: 30, description: "Weekly assignments" },
+  //         participation: { percentage: 10, description: "Class participation and discussion" },
+  //         midterm: { percentage: 25, description: "Mid-term examination" },
+  //         finalExam: { percentage: 35, description: "Final examination" },
+  //       },
+  //       weeklySchedule: [
+  //         {
+  //           week: 1,
+  //           topic: "Introduction to the Course",
+  //           readings: "Chapters 1-2",
+  //           assignments: "Introductory Assignment",
+  //         },
+  //         { week: 2, topic: "Foundational Concepts", readings: "Chapters 3-4", assignments: "Reading Response" },
+  //         { week: 3, topic: "Theoretical Frameworks", readings: "Chapters 5-6", assignments: "Case Study Analysis" },
+  //         { week: 4, topic: "Applied Methods", readings: "Chapters 7-8", assignments: "Group Project Proposal" },
+  //         { week: 5, topic: "Current Developments", readings: "Chapters 9-10", assignments: "Research Paper Outline" },
+  //         { week: 6, topic: "Advanced Topics I", readings: "Chapters 11-12", assignments: "Problem Set" },
+  //         { week: 7, topic: "Advanced Topics II", readings: "Chapters 13-14", assignments: "Midterm Preparation" },
+  //         {
+  //           week: 8,
+  //           topic: "Midterm Examination",
+  //           readings: "Review All Previous Chapters",
+  //           assignments: "Midterm Exam",
+  //         },
+  //         { week: 9, topic: "Practical Applications I", readings: "Chapters 15-16", assignments: "Case Analysis" },
+  //         {
+  //           week: 10,
+  //           topic: "Practical Applications II",
+  //           readings: "Chapters 17-18",
+  //           assignments: "Group Presentation",
+  //         },
+  //         { week: 11, topic: "Integration of Concepts", readings: "Chapters 19-20", assignments: "Synthesis Paper" },
+  //         { week: 12, topic: "Future Directions", readings: "Chapters 21-22", assignments: "Final Project Work" },
+  //         { week: 13, topic: "Student Presentations", readings: "None", assignments: "Final Presentations" },
+  //         { week: 14, topic: "Course Review", readings: "Review All Materials", assignments: "Final Exam Preparation" },
+  //         { week: 15, topic: "Final Examination", readings: "None", assignments: "Final Exam" },
+  //       ],
+  //       policies: {
+  //         attendance:
+  //           "Regular attendance is required. More than three unexcused absences will result in grade reduction.",
+  //         lateWork: "Late assignments will be accepted with a 10% penalty per day, up to three days.",
+  //         academicIntegrity:
+  //           "Academic dishonesty, including plagiarism and cheating, will result in course failure and possible disciplinary action.",
+  //         accommodations: "Reasonable accommodations will be made for students with documented disabilities.",
+  //       },
+  //     }
 
-      setSyllabusData(mockSyllabus)
-      setIsGenerating(false)
-      setActiveTab("edit")
-    }, 3000)
-  }
+  //     setSyllabusData(mockSyllabus)
+  //     setIsGenerating(false)
+  //     setActiveTab("edit")
+  //   }, 3000)
+  // }
+
+  // const generateSyllabus = async () => {
+  //   setIsGenerating(true)
+
+  //   const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY })
+
+  //   const fullPrompt = `
+  // You are an expert educator and course designer.
+  // Generate a full course syllabus including:
+  // - Course title, term, instructor (can be placeholders)
+  // - Detailed course description
+  // - 3–5 learning objectives
+  // - A list of required materials (books, resources)
+  // - Grading policy with percentages
+  // - 10–15 week schedule with weekly topics, readings, and assignments
+  // - Course policies (attendance, late work, academic integrity, accommodations)
+  
+  // Course Info:
+  // Title: ${courseDetails.name}
+  // Subject: ${courseDetails.subject}
+  // Grade Level: ${courseDetails.gradeLevel}
+  // Description: ${courseDetails.description}
+  
+  // Additional Instructor Notes: ${additionalInfo || "None"}
+  //   `
+
+  //   try {
+  //     const result = await ai.models.generateContent({
+  //       model: "gemini-2.0-flash",
+  //       contents: fullPrompt,
+  //     })
+
+  //     const rawText = result.text || ""
+  //     // For now, just place it in one field and parse later if needed
+  //     setSyllabusData({
+  //       rawText,
+  //       courseTitle: courseDetails.name,
+  //       instructor: "Your Name",
+  //       term: "Fall 2025",
+  //       courseDescription: courseDetails.description,
+  //       learningObjectives: [],
+  //       requiredMaterials: [],
+  //       gradingPolicy: {},
+  //       weeklySchedule: [],
+  //       policies: {},
+  //     })
+  //     const fullCourseData = {
+  //       ...courseDetails,
+  //       syllabus: syllabusData,
+  //     };
+  //     await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/course/save-course`, fullCourseData); 
+  //     toast({
+  //       title: "Syllabus Generated",
+  //       description: "AI has created your course syllabus. You can now edit or preview it.",
+  //     })
+
+  //     setActiveTab("edit")
+  //   } catch (error) {
+  //     console.error("Error generating syllabus:", error)
+  //     toast({
+  //       title: "Error",
+  //       description: "Failed to generate syllabus content.",
+  //     })
+  //   } finally {
+  //     setIsGenerating(false)
+  //   }
+  // }
+
+  const generateSyllabus = async () => {
+    setIsGenerating(true);
+  
+    const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY });
+  
+    const fullPrompt = `
+      You are an expert educator and course designer.
+      Generate a full course syllabus including:
+      - Course title, term, instructor (can be placeholders)
+      - Detailed course description
+      - 3–5 learning objectives
+      - A list of required materials (books, resources)
+      - Grading policy with percentages
+      - 10–15 week schedule with weekly topics, readings, and assignments
+      - Course policies (attendance, late work, academic integrity, accommodations)
+      
+      Course Info:
+      Title: ${courseDetails.name}
+      Subject: ${courseDetails.subject}
+      Grade Level: ${courseDetails.gradeLevel}
+      Description: ${courseDetails.description}
+      
+      Additional Instructor Notes: ${additionalInfo || "None"}
+    `;
+  
+    try {
+      const result = await ai.models.generateContent({
+        model: "gemini-2.0-flash",
+        contents: fullPrompt,
+      });
+  
+      const rawText = result.text || "";
+  
+      // Set it in state if you need it for display
+      setSyllabusData({
+        rawText,
+        learningObjectives: [], // Important to prevent error
+        requiredMaterials: [],
+        gradingPolicy: {},
+        weeklySchedule: [],
+        policies: {},
+      });
+  
+      // Now prepare the minimal data for backend (only fields your backend accepts)
+      const fullCourseData = {
+        name: courseDetails.name,
+        description: courseDetails.description,
+        subject: courseDetails.subject,
+        gradeLevel: courseDetails.gradeLevel,
+        rawText: rawText, // the AI-generated syllabus
+      };
+  
+      // Send to backend
+      await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/course/save-course`, fullCourseData);
+  
+      toast({
+        title: "Syllabus Generated",
+        description: "AI has created your course syllabus and saved it.",
+      });
+  
+      setActiveTab("edit");
+    } catch (error) {
+      console.error("Error generating syllabus:", error);
+      toast({
+        title: "Error",
+        description: "Failed to generate syllabus content.",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+  
+
+  
 
   return (
     <div className="space-y-6">

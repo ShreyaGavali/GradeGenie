@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -19,8 +19,10 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import axios from "axios"
+import { useParams } from "next/navigation";
 
-export default function CourseDetailPage({ params }: { params: { id: string } }) {
+export default function CourseDetailPage() {
   const { toast } = useToast()
   const [activeTab, setActiveTab] = useState("assignments")
   const [isDownloadingSyllabus, setIsDownloadingSyllabus] = useState(false)
@@ -30,7 +32,24 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false)
 
   // Find the course by ID
-  const course = courses.find((c) => c.id === params.id) || courses[0]
+  // const course = courses.find((c) => c.id === params.id) || courses[0]
+  const [course, setCourse] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const params = useParams();
+  useEffect(() => {
+    const fetchCourse = async () => {
+      try {
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/course/${params.id}`);
+        setCourse(response.data);
+      } catch (error) {
+        console.error("Failed to fetch course:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCourse();
+  }, [params.id]);
 
   const handleGradeAssignment = (assignmentId: string) => {
     toast({
@@ -114,6 +133,14 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
     setIsUploadModalOpen(false)
   }
 
+  if (loading) {
+    return <div>Loading course...</div>;
+  }
+  
+  if (!course) {
+    return <div>Course not found.</div>;
+  }
+
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
       <div className="flex items-center space-x-2">
@@ -122,8 +149,8 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
             <ArrowLeft className="h-4 w-4" />
           </Link>
         </Button>
-        <h2 className="text-3xl font-bold tracking-tight">{course.title}</h2>
-        <Badge>{course.code}</Badge>
+        <h2 className="text-3xl font-bold tracking-tight">Course Name</h2>
+        <Badge>course</Badge>
       </div>
       <div className="grid gap-4 md:grid-cols-7">
         <Card className="md:col-span-5">
@@ -131,7 +158,7 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle>Course Details</CardTitle>
-                <CardDescription>{course.students} students enrolled • Spring 2025</CardDescription>
+                <CardDescription>course students enrolled • Spring 2025</CardDescription>
               </div>
               <Button asChild>
                 <Link href={`/dashboard/create-assignment?courseId=${params.id}`}>
@@ -203,7 +230,7 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
                     <div className="flex items-center justify-between">
                       <div>
                         <CardTitle>Enrolled Students</CardTitle>
-                        <CardDescription>{course.students} students in this course</CardDescription>
+                        <CardDescription> students in this course</CardDescription>
                       </div>
                       <div className="flex space-x-2">
                         <Button variant="outline" onClick={handleEmailStudents}>
@@ -279,42 +306,14 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
                   </CardHeader>
                   <CardContent>
                     <div className="prose max-w-none dark:prose-invert">
-                      <h1>
-                        {course.title} ({course.code})
-                      </h1>
-                      <h2>Spring 2025</h2>
+                      <h1>{course.name}</h1>
+                      <h2>{course.subject} - {course.gradeLevel}</h2>
 
                       <h3>Course Description</h3>
-                      <p>
-                        This course provides a comprehensive introduction to the scientific study of behavior and mental
-                        processes. Students will explore the major theories, concepts, and research methods in
-                        psychology, including biological bases of behavior, sensation and perception, learning, memory,
-                        cognition, development, personality, social psychology, and psychological disorders.
-                      </p>
+                      <p>{course.description}</p>
 
-                      <h3>Learning Objectives</h3>
-                      <ul>
-                        <li>Describe key concepts, principles, and overarching themes in psychology</li>
-                        <li>Develop a working knowledge of psychology's content domains</li>
-                        <li>Apply critical thinking skills to evaluate psychological research</li>
-                        <li>Apply psychological concepts to real-world situations</li>
-                        <li>Demonstrate effective written and oral communication skills</li>
-                      </ul>
-
-                      <h3>Required Materials</h3>
-                      <ul>
-                        <li>Myers, D. G., & DeWall, C. N. (2024). Psychology (14th ed.). Worth Publishers.</li>
-                        <li>Additional readings will be provided on the course website</li>
-                      </ul>
-
-                      <h3>Assignments and Grading</h3>
-                      <ul>
-                        <li>Midterm Exam: 25%</li>
-                        <li>Final Exam: 30%</li>
-                        <li>Research Paper: 20%</li>
-                        <li>Weekly Quizzes: 15%</li>
-                        <li>Class Participation: 10%</li>
-                      </ul>
+                      <h3>Generated Syllabus</h3>
+                      <pre className="whitespace-pre-wrap">{course.rawText || "No syllabus generated yet."}</pre>
                     </div>
                   </CardContent>
                 </Card>

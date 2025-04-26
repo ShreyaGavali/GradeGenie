@@ -64,6 +64,9 @@ export default function SignupPage() {
       if (!response.ok) {
         throw new Error(data.message || "Signup failed")
       }
+
+      localStorage.setItem("token", data.token)
+      localStorage.setItem("studentID", data.user.id);
   
       setStep(step + 1) // move to next step
     } catch (err) {
